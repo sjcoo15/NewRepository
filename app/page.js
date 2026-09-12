@@ -1,0 +1,37 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+const exercises = [
+  { id:'dead-bug', name:'Dead Bug', dose:'6 each side', focus:'Deep core', cue:'Keep your lower back gently heavy against the floor. Move slowly.', avoid:'Do not let the lower back arch as your arm and leg extend.', art:'deadbug' },
+  { id:'glute-bridge', name:'Glute Bridge', dose:'10 reps', focus:'Glutes + core', cue:'Brace lightly, squeeze your glutes, then lift until your body forms a straight line.', avoid:'Do not finish by over-arching your lower back.', art:'bridge' },
+  { id:'bird-dog', name:'Bird Dog', dose:'6 each side', focus:'Core stability', cue:'Reach long through the opposite arm and leg while keeping your hips level.', avoid:'Do not rotate your pelvis or crank your leg too high.', art:'birddog' },
+  { id:'side-plank-knees', name:'Side Plank — Knees', dose:'20 sec each side', focus:'Side core', cue:'Keep shoulders, hips and knees in one line. Lift from the underside waist.', avoid:'Do not let the top shoulder roll forward.', art:'sideplank' },
+  { id:'heel-taps', name:'Heel Taps', dose:'8 each side', focus:'Abs control', cue:'Keep ribs relaxed and slowly tap one heel away without losing trunk position.', avoid:'Shorten the range if your lower back starts to arch.', art:'heeltap' }
+];
+
+function Figure({ type }) {
+  const c={stroke:'currentColor',strokeWidth:8,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'};
+  if(type==='bridge') return <svg viewBox="0 0 320 190"><line x1="20" y1="160" x2="300" y2="160" {...c}/><circle cx="78" cy="130" r="18" {...c}/><path d="M96 132 L150 105 L220 118 L260 157 M150 105 L188 157" {...c}/></svg>;
+  if(type==='birddog') return <svg viewBox="0 0 320 190"><line x1="20" y1="160" x2="300" y2="160" {...c}/><circle cx="128" cy="86" r="17" {...c}/><path d="M145 98 L182 120 L224 122 M180 121 L160 158 M224 122 L247 158 M154 110 L102 128 L56 105 M158 111 L208 88 L260 62" {...c}/></svg>;
+  if(type==='sideplank') return <svg viewBox="0 0 320 190"><line x1="20" y1="160" x2="300" y2="160" {...c}/><circle cx="90" cy="74" r="17" {...c}/><path d="M108 84 L148 105 L202 128 L244 158 M148 105 L114 149 M202 128 L184 158 M147 104 L164 63" {...c}/></svg>;
+  if(type==='heeltap') return <svg viewBox="0 0 320 190"><line x1="20" y1="160" x2="300" y2="160" {...c}/><circle cx="84" cy="128" r="18" {...c}/><path d="M102 129 L150 116 L192 130 M150 116 L146 78 L190 78 M192 130 L248 157 M190 78 L224 112 L214 157" {...c}/></svg>;
+  return <svg viewBox="0 0 320 190"><line x1="20" y1="160" x2="300" y2="160" {...c}/><circle cx="83" cy="130" r="18" {...c}/><path d="M101 130 L151 120 L191 120 M149 121 L122 70 M149 121 L186 71 M191 120 L223 83 L252 56 M191 120 L230 151 L280 151" {...c}/></svg>;
+}
+
+function deviceId(){let id=localStorage.getItem('core-trainer-device');if(!id){id=crypto.randomUUID();localStorage.setItem('core-trainer-device',id)}return id}
+
+export default function Home(){
+  const [screen,setScreen]=useState('home'); const [index,setIndex]=useState(0); const [history,setHistory]=useState([]); const [installPrompt,setInstallPrompt]=useState(null);
+  const current=exercises[index]; const progress=useMemo(()=>Math.round(((index+1)/exercises.length)*100),[index]);
+  useEffect(()=>{const h=e=>{e.preventDefault();setInstallPrompt(e)};window.addEventListener('beforeinstallprompt',h);const id=deviceId();fetch(`/api/progress?device=${encodeURIComponent(id)}`).then(r=>r.ok?r.json():{history:[]}).then(d=>setHistory(d.history||[])).catch(()=>{});return()=>window.removeEventListener('beforeinstallprompt',h)},[]);
+  async function install(){if(installPrompt){await installPrompt.prompt();setInstallPrompt(null)}else alert('In Chrome, open the ⋮ menu and choose “Install app” or “Add to Home screen”.')}
+  async function finish(){const entry={completedAt:new Date().toISOString(),exercises:exercises.length};setHistory(h=>[entry,...h]);setIndex(0);setScreen('done');fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:deviceId(),exercises:exercises.length})}).catch(()=>{})}
+  function next(){if(index===exercises.length-1) finish(); else setIndex(i=>i+1)}
+  return <main className="shell"><header className="topbar"><div><div className="eyebrow">CORE TRAINER</div><h1>Strong core. Simple steps.</h1></div><button className="ghost" onClick={install}>Install</button></header>
+  {screen==='home'&&<section className="stack"><div className="hero card"><div><span className="pill">Beginner • 8–10 min</span><h2>Today’s Core Session</h2><p>Five controlled exercises focused on trunk stability, glutes and abdominal control.</p></div><button className="primary" onClick={()=>{setIndex(0);setScreen('workout')}}>Start workout</button></div><div className="grid2"><button className="card actionCard" onClick={()=>setScreen('library')}><strong>Exercise library</strong><span>See all 5 movements and pictures</span></button><button className="card actionCard" onClick={()=>setScreen('progress')}><strong>Progress</strong><span>{history.length} workouts completed</span></button></div><div className="note">Move in a comfortable range. Stop if an exercise causes sharp pain, numbness, weakness or worsening back/leg symptoms.</div></section>}
+  {screen==='workout'&&<section className="workout card"><div className="row"><button className="textButton" onClick={()=>setScreen('home')}>← Exit</button><span>{index+1} / {exercises.length}</span></div><div className="progress"><span style={{width:`${progress}%`}}/></div><div className="figure"><Figure type={current.art}/></div><div className="exerciseMeta"><span className="pill">{current.focus}</span><span className="dose">{current.dose}</span></div><h2>{current.name}</h2><div className="instruction"><b>Do this</b><p>{current.cue}</p></div><div className="instruction warning"><b>Avoid</b><p>{current.avoid}</p></div><button className="primary" onClick={next}>{index===exercises.length-1?'Finish workout':'Done — next exercise'}</button></section>}
+  {screen==='library'&&<section className="stack"><div className="row"><h2>Exercise library</h2><button className="textButton" onClick={()=>setScreen('home')}>Home</button></div>{exercises.map(ex=><article className="card library" key={ex.id}><div className="thumb"><Figure type={ex.art}/></div><div><span className="pill">{ex.focus}</span><h3>{ex.name}</h3><p>{ex.cue}</p><b>{ex.dose}</b></div></article>)}</section>}
+  {screen==='progress'&&<section className="stack"><div className="row"><h2>Progress</h2><button className="textButton" onClick={()=>setScreen('home')}>Home</button></div><div className="card"><div className="bigNumber">{history.length}</div><p>completed workouts</p></div>{history.length===0?<div className="note">Complete your first workout and it will appear here.</div>:history.map((h,i)=><div className="history" key={i}><b>{new Date(h.completedAt).toLocaleDateString()}</b><span>{h.exercises||5} exercises</span></div>)}</section>}
+  {screen==='done'&&<section className="center card"><div className="check">✓</div><h2>Workout complete</h2><p>You finished all {exercises.length} exercises.</p><button className="primary" onClick={()=>setScreen('home')}>Back home</button></section>}</main>
+}
