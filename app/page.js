@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const exercises = [
   { id:'dead-bug', name:'Dead Bug', dose:'6 each side', setup:'Lie on your back with arms up and knees bent to 90°.', cue:'Keep your lower back gently heavy against the floor. Move slowly.', avoid:'Do not let the lower back arch as your arm and leg extend.', easier:'Move one arm or leg at a time.', focus:'Deep core', art:'deadbug', image:'/exercise-deadbug.png?v=core-image-fix-1' },
@@ -35,15 +35,18 @@ function dateKey(date){return `${date.getFullYear()}-${date.getMonth()}-${date.g
 function getConsistency(history){const days=new Set(history.map(item=>dateKey(new Date(item.completedAt))));const today=new Date();let week=0;for(let i=0;i<7;i++){const day=new Date(today);day.setDate(today.getDate()-i);if(days.has(dateKey(day)))week++}let cursor=new Date(today);if(!days.has(dateKey(cursor)))cursor.setDate(cursor.getDate()-1);let streak=0;while(days.has(dateKey(cursor))){streak++;cursor.setDate(cursor.getDate()-1)}return {streak,week}}
 
 export default function Home(){
-  const [screen,setScreen]=useState('home'); const [index,setIndex]=useState(0); const [history,setHistory]=useState([]); const [timerSeconds,setTimerSeconds]=useState(null); const [timerRunning,setTimerRunning]=useState(false); const [timerRound,setTimerRound]=useState(1); const [timerComplete,setTimerComplete]=useState(false); const [paused,setPaused]=useState(false);
+  const [screen,setScreen]=useState('home'); const [index,setIndex]=useState(0); const [history,setHistory]=useState([]); const [timerSeconds,setTimerSeconds]=useState(null); const [timerRunning,setTimerRunning]=useState(false); const [timerRound,setTimerRound]=useState(1); const [timerComplete,setTimerComplete]=useState(false); const [paused,setPaused]=useState(false); const timerAudio=useRef(null);
   const current=exercises[index]; const progress=useMemo(()=>Math.round(((index+1)/exercises.length)*100),[index]);
   const consistency=useMemo(()=>getConsistency(history),[history]);
   useEffect(()=>{const id=deviceId();fetch(`/api/progress?device=${encodeURIComponent(id)}`).then(r=>r.ok?r.json():{history:[]}).then(d=>setHistory(d.history||[])).catch(()=>{})},[]);
   useEffect(()=>{setTimerSeconds(current.timer??null);setTimerRunning(false);setTimerRound(1);setTimerComplete(false);setPaused(false)},[index,current.timer]);
   useEffect(()=>{if(!timerRunning||paused)return;const id=setInterval(()=>{setTimerSeconds(value=>{if(value<=1){setTimerRunning(false);if(timerRound<current.timerRounds){setTimerRound(round=>round+1)}else{setTimerComplete(true)}return 0}return value-1})},1000);return()=>clearInterval(id)},[timerRunning,paused,timerRound,current.timerRounds]);
+  useEffect(()=>{if(timerSeconds!==0||timerRunning)return;signalTimerFinished()},[timerSeconds,timerRunning]);
   async function finish(){const entry={completedAt:new Date().toISOString(),exercises:exercises.length};setHistory(h=>[entry,...h]);setIndex(0);setPaused(false);setScreen('done');fetch('/api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:deviceId(),exercises:exercises.length})}).catch(()=>{})}
   function next(){if(index===exercises.length-1) finish(); else {setPaused(false);setIndex(i=>i+1)}}
-  function startTimer(){if(!current.timer||timerComplete)return;setTimerSeconds(current.timer);setTimerRunning(true)}
+  function prepareTimerSound(){try{const AudioContext=window.AudioContext||window.webkitAudioContext;if(AudioContext&&!timerAudio.current)timerAudio.current=new AudioContext();if(timerAudio.current?.state==='suspended')timerAudio.current.resume()}catch{}}
+  function signalTimerFinished(){if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate([250,100,250]);try{const context=timerAudio.current;if(!context)return;const oscillator=context.createOscillator();const gain=context.createGain();const now=context.currentTime;oscillator.frequency.value=880;gain.gain.setValueAtTime(0.0001,now);gain.gain.exponentialRampToValueAtTime(0.2,now+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.45);oscillator.connect(gain);gain.connect(context.destination);oscillator.start(now);oscillator.stop(now+0.45)}catch{}}
+  function startTimer(){if(!current.timer||timerComplete)return;prepareTimerSound();setTimerSeconds(current.timer);setTimerRunning(true)}
   function resetTimer(){setTimerSeconds(current.timer??null);setTimerRunning(false);setTimerRound(1);setTimerComplete(false)}
   function previous(){setPaused(false);setIndex(i=>Math.max(0,i-1))}
   function restartWorkout(){setPaused(false);setIndex(0);setScreen('workout')}
