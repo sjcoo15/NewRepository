@@ -9,6 +9,7 @@ body{margin:0;background:linear-gradient(180deg,#eef1f5 0,#f8f8f9 45%,#f4f5f7 10
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;box-shadow:0 12px 36px #0f172a12;padding:20px}
 .hero{display:grid;gap:24px;padding:28px}
 .hero h2,.workout h2{font-size:28px;margin:12px 0 8px}
+.workout{position:relative}
 .hero p,.library p,.instruction p,.center p{color:#475569;line-height:1.55}
 .primary,.ghost,.textButton{font:inherit;cursor:pointer;border:0}
 .primary{width:100%;background:#111827;color:#fff;padding:15px 18px;border-radius:16px;font-weight:800;font-size:16px}
@@ -22,8 +23,11 @@ body{margin:0;background:linear-gradient(180deg,#eef1f5 0,#f8f8f9 45%,#f4f5f7 10
 .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .progress{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin:16px 0}
 .progress span{display:block;height:100%;background:#111827}
-.figure{height:auto;min-height:0;aspect-ratio:auto;border-radius:22px;background:#f8fafc;display:block;margin:18px 0;overflow:hidden}
+.figure{height:auto;min-height:0;aspect-ratio:auto;border-radius:22px;background:#f8fafc;display:block;margin:18px 0;overflow:hidden;position:relative}
 .figure img{width:100%;height:auto;display:block}
+.figureLabel{position:absolute;left:12px;background:#111827d9;color:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;letter-spacing:.02em}
+.startLabel{top:12px}
+.finishLabel{bottom:12px}
 .exerciseMeta{display:flex;justify-content:space-between;align-items:center}
 .dose{font-weight:900;font-size:18px}
 .instruction{background:#f8fafc;border-radius:16px;padding:14px 16px;margin:12px 0}
@@ -51,6 +55,18 @@ body{margin:0;background:linear-gradient(180deg,#eef1f5 0,#f8f8f9 45%,#f4f5f7 10
 .timerButton{background:#111827;color:#fff}
 .timerButton:disabled{background:#94a3b8;cursor:default}
 .timerReset{background:#fff;color:#334155;border:1px solid #cbd5e1}
+.instruction.setup{background:#eef2ff}
+.instruction.easier{background:#ecfdf5}
+.workoutControls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.controlButton,.secondaryButton{font:inherit;cursor:pointer;border:1px solid #cbd5e1;border-radius:12px;padding:11px 10px;font-weight:800;background:#fff;color:#334155}
+.controlButton:disabled{opacity:.45;cursor:default}
+.pausePanel{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:center;gap:10px;background:#fff; padding:28px;border-radius:24px;box-shadow:0 18px 50px #0f172a26}
+.pausePanel h3{font-size:28px;margin:0}
+.pausePanel p{color:#475569;margin:0 0 8px}
+.pausePanel .textButton{padding:8px}
+.statsGrid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:16px}
+.statsGrid p{color:#64748b;margin:4px 0 0}
+.statNumber{font-size:38px;font-weight:900;line-height:1.1}
 @media(max-width:600px){.grid2{grid-template-columns:1fr}
 .library{grid-template-columns:1fr}
 .thumb{height:auto}
@@ -60,4 +76,6 @@ body{margin:0;background:linear-gradient(180deg,#eef1f5 0,#f8f8f9 45%,#f4f5f7 10
 .timerBox{align-items:flex-start}
 .timerActions{flex-direction:column;align-items:stretch}
 .timerButton,.timerReset{white-space:nowrap}
+.statsGrid{grid-template-columns:1fr 1fr}
+.statsGrid>div:first-child{grid-column:1/-1}
 }
